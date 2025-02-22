@@ -1,98 +1,108 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	let disposable = vscode.commands.registerCommand('no-flows-given.helloWorld', () => {
-        // Create and show panel
-        const panel = vscode.window.createWebviewPanel(
-            'youtubePlayer',
-            'YouTube Player',
-            vscode.ViewColumn.Two,
-            {
-                enableScripts: true
-            }
-        );
+  const disposable = vscode.commands.registerCommand(
+    "no-flows-given.helloWorld",
+    () => {
+      const panel = vscode.window.createWebviewPanel(
+        "localVideoPlayer",
+        "Local Video Player",
+        vscode.ViewColumn.Two,
+        {
+          localResourceRoots: [
+            vscode.Uri.file(path.join(context.extensionPath, "media")),
+          ],
+          enableScripts: true, // Enable scripts for autoplay handling
+        }
+      );
 
-        // Set HTML content
-        panel.webview.html = getWebviewContent();
-    });
+      const videoFilePath = path.join(
+        context.extensionPath,
+        "media",
+        "subwaysurfers.mp4"
+      );
 
-    context.subscriptions.push(disposable);
+      const videoFileUri = panel.webview.asWebviewUri(
+        vscode.Uri.file(videoFilePath)
+      );
+
+      panel.webview.html = getWebviewContent(
+        videoFileUri,
+        panel.webview.cspSource
+      );
+    }
+  );
+  context.subscriptions.push(disposable);
 }
 
-function getWebviewContent() {
-    return `
+function getWebviewContent(videoUri: vscode.Uri, cspSource: string): string {
+  return /* html */ `
         <!DOCTYPE html>
-        <html lang="en">
+        <html>
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>YouTube Player</title>
+            <meta
+                http-equiv="Content-Security-Policy"
+                content="
+                    default-src 'none';
+                    style-src 'unsafe-inline';
+                    media-src ${cspSource};
+                    script-src 'unsafe-inline';
+                "
+            >
             <style>
                 body {
-                    padding: 0;
                     margin: 0;
-                }
-                .container {
+                    padding: 0;
+                    background-color: var(--vscode-editor-background);
+                    color: var(--vscode-editor-foreground);
                     display: flex;
                     flex-direction: column;
-                    padding: 10px;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
                 }
-                #player {
-                    width: 100%;
-                    height: 200px;
-                }
-                #videoInput {
-                    margin-bottom: 10px;
-                    padding: 5px;
-                }
-                #loadButton {
-                    padding: 5px;
-                    margin-bottom: 10px;
+                video {
+                    max-width: 100%;
+                    border: 1px solid #666;
                 }
             </style>
         </head>
         <body>
-            <div class="container">
-                <input type="text" id="videoInput" placeholder="Enter YouTube video ID">
-                <button id="loadButton">Load Video</button>
-                <div id="player"></div>
-            </div>
+            <video 
+                id="videoPlayer"
+                controls 
+                autoplay 
+                muted 
+                src="${videoUri}"
+            ></video>
             <script>
-                // Load YouTube IFrame API
-                var tag = document.createElement('script');
-                tag.src = "https://www.youtube.com/iframe_api";
-                var firstScriptTag = document.getElementsByTagName('script')[0];
-                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-                let player;
-                function onYouTubeIframeAPIReady() {
-                    player = new YT.Player('player', {
-                        height: '200',
-                        width: '100%',
-                        videoId: 'L_fcrOyoWZ8', // Default video
-                        playerVars: {
-                            'playsinline': 1,
-                            'controls': 1
-                        }
-                    });
-                }
-
-                // Add event listeners
-                document.getElementById('loadButton').addEventListener('click', () => {
-                    const videoId = document.getElementById('videoInput').value;
-                    if (videoId) {
-                        player.loadVideoById(videoId);
+                // Ensure autoplay works
+                window.onload = function() {
+                    const video = document.getElementById('videoPlayer');
+                    
+                    // Try to play the video
+                    const playPromise = video.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.log("Autoplay failed:", error);
+                            // If autoplay fails, you might want to show a play button
+                            // or handle it in some other way
+                        });
                     }
-                });
+
+                    // Optional: Unmute when user interacts with the page
+                    document.addEventListener('click', function() {
+                        video.muted = false;
+                    }, { once: true });
+                }
             </script>
         </body>
         </html>
     `;
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}
