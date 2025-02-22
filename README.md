@@ -4,4 +4,7 @@ I’ve noticed it’s getting harder to stay in “the zone” when AI does most
 
 ## Features
 
-Show a subway surfers video to the side
+Command rot: Show a subway surfers video to the side
+
+## Demo
+[peek programming performance](https://github.com/user-attachments/assets/2e3e7261-a55f-4535-a749-18c44ae6e472)
