@@ -3,42 +3,42 @@ import * as path from "path";
 import * as fs from "fs";
 
 export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand(
-    "no-flows-given.helloWorld",
-    () => {
-      const panel = vscode.window.createWebviewPanel(
-        "localVideoPlayer",
-        "Local Video Player",
-        vscode.ViewColumn.Two,
-        {
-          localResourceRoots: [
-            vscode.Uri.file(path.join(context.extensionPath, "media")),
-          ],
-          enableScripts: true, // Enable scripts for autoplay handling
+    const disposable = vscode.commands.registerCommand(
+        "no-flows-given.helloWorld",
+        () => {
+            const panel = vscode.window.createWebviewPanel(
+                "localVideoPlayer",
+                "Local Video Player",
+                vscode.ViewColumn.Two,
+                {
+                    localResourceRoots: [
+                        vscode.Uri.file(path.join(context.extensionPath, "media")),
+                    ],
+                    enableScripts: true, // Enable scripts for autoplay handling
+                }
+            );
+
+            const videoFilePath = path.join(
+                context.extensionPath,
+                "media",
+                "subwaysurfers.mp4"
+            );
+            
+            const videoFileUri = panel.webview.asWebviewUri(
+                vscode.Uri.file(videoFilePath)
+            );
+
+            panel.webview.html = getWebviewContent(
+                videoFileUri,
+                panel.webview.cspSource
+            );
         }
-      );
-
-      const videoFilePath = path.join(
-        context.extensionPath,
-        "media",
-        "subwaysurfers.mp4"
-      );
-
-      const videoFileUri = panel.webview.asWebviewUri(
-        vscode.Uri.file(videoFilePath)
-      );
-
-      panel.webview.html = getWebviewContent(
-        videoFileUri,
-        panel.webview.cspSource
-      );
-    }
-  );
-  context.subscriptions.push(disposable);
+    );
+    context.subscriptions.push(disposable);
 }
 
 function getWebviewContent(videoUri: vscode.Uri, cspSource: string): string {
-  return /* html */ `
+    return /* html */ `
         <!DOCTYPE html>
         <html>
         <head>
@@ -76,6 +76,7 @@ function getWebviewContent(videoUri: vscode.Uri, cspSource: string): string {
                 controls 
                 autoplay 
                 muted 
+                loop
                 src="${videoUri}"
             ></video>
             <script>
